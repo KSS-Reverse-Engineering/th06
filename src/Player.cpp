@@ -22,6 +22,7 @@
 #include "ZunBool.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
+#include <stdio.h>
 
 namespace th06
 {
@@ -591,6 +592,37 @@ void Player::UpdatePlayerBullets(Player *player)
 ChainCallbackResult Player::OnDrawHighPrio(Player *p)
 {
     Player::DrawBullets(p);
+
+    PlayerRect *curBombProjectile;
+    f32 bulletLeft, bulletTop, bulletRight, bulletBottom;
+    f32 bombProjectileLeft, bombProjectileTop, bombProjectileRight, bombProjectileBottom;
+    i32 curBombIdx;
+
+    ZunRect rect;
+
+    if (p->bombInfo.isInUse)
+    {
+    curBombProjectile = p->bombProjectiles;
+    for (curBombIdx = 0; curBombIdx < ARRAY_SIZE_SIGNED(p->bombProjectiles); curBombIdx++, curBombProjectile++)
+    {
+        if (curBombProjectile->sizeX == 0.0f)
+        {
+            continue;
+        }
+        bombProjectileLeft = 32 + curBombProjectile->posX - curBombProjectile->sizeX / 2.0f;
+        bombProjectileTop = 16 + curBombProjectile->posY - curBombProjectile->sizeY / 2.0f;
+        bombProjectileRight = 32 + curBombProjectile->posX + curBombProjectile->sizeX / 2.0f;
+        bombProjectileBottom = 16 + curBombProjectile->posY + curBombProjectile->sizeY / 2.0f;
+
+        rect.left   = bombProjectileLeft;
+        rect.top    = bombProjectileTop;
+        rect.right  = bombProjectileRight;
+        rect.bottom = bombProjectileBottom;
+    
+        ScreenEffect::DrawSquare(&rect, 0x40ffff00);
+    }
+    }
+
     if (p->bombInfo.isInUse != 0 && p->bombInfo.draw != NULL)
     {
         p->bombInfo.draw(p);
@@ -600,7 +632,7 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
     p->playerSprite.pos.z = 0.49;
     if (!g_GameManager.isInRetryMenu)
     {
-        g_AnmManager->DrawNoRotation(&p->playerSprite);
+        //g_AnmManager->DrawNoRotation(&p->playerSprite);
         if (p->orbState != ORB_HIDDEN &&
             (p->playerState == PLAYER_STATE_ALIVE || p->playerState == PLAYER_STATE_INVULNERABLE))
         {
@@ -616,10 +648,25 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
             *y2 += g_GameManager.arcadeRegionTopLeftPos.y;
             p->orbsSprite[0].pos.z = 0.491;
             p->orbsSprite[1].pos.z = 0.491;
-            g_AnmManager->Draw(&p->orbsSprite[0]);
-            g_AnmManager->Draw(&p->orbsSprite[1]);
+            //g_AnmManager->Draw(&p->orbsSprite[0]);
+            //g_AnmManager->Draw(&p->orbsSprite[1]);
         }
     }
+
+    rect.left   = g_GameManager.arcadeRegionTopLeftPos.x + p->hitboxTopLeft.x;
+    rect.top    = g_GameManager.arcadeRegionTopLeftPos.y + p->hitboxTopLeft.y;
+    rect.right  = g_GameManager.arcadeRegionTopLeftPos.x + p->hitboxBottomRight.x;
+    rect.bottom = g_GameManager.arcadeRegionTopLeftPos.y + p->hitboxBottomRight.y;
+
+    ScreenEffect::DrawSquare(&rect, 0xffffffff);
+
+    rect.left   = g_GameManager.arcadeRegionTopLeftPos.x + p->hitboxTopLeft.x - 20.0f;
+    rect.top    = g_GameManager.arcadeRegionTopLeftPos.y + p->hitboxTopLeft.y - 20.0f;
+    rect.right  = g_GameManager.arcadeRegionTopLeftPos.x + p->hitboxBottomRight.x + 20.0f;
+    rect.bottom = g_GameManager.arcadeRegionTopLeftPos.y + p->hitboxBottomRight.y + 20.0f;
+
+    ScreenEffect::DrawSquare(&rect, 0x40ffffff);
+
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
@@ -955,7 +1002,14 @@ void Player::DrawBullets(Player *p)
         {
             bullets->sprite.rotation.z = ZUN_PI / 2 - utils::AddNormalizeAngle(bullets->unk_134.z, ZUN_PI);
         }
-        g_AnmManager->Draw2(&bullets->sprite);
+        ZunRect rect;
+        rect.left = g_GameManager.arcadeRegionTopLeftPos.x + bullets->position.x - bullets->size.x / 2.0f;
+        rect.top = g_GameManager.arcadeRegionTopLeftPos.y + bullets->position.y - bullets->size.y / 2.0f;
+        rect.right = g_GameManager.arcadeRegionTopLeftPos.x + bullets->position.x + bullets->size.x / 2.0f;
+        rect.bottom = g_GameManager.arcadeRegionTopLeftPos.y + bullets->position.y + bullets->size.y / 2.0f;
+        
+        ScreenEffect::DrawSquare(&rect, 0x4000ffff);
+        //g_AnmManager->Draw2(&bullets->sprite);
     }
 }
 
@@ -976,7 +1030,7 @@ void Player::DrawBulletExplosions(Player *p)
             bullets->sprite.rotation.z = ZUN_PI / 2 - utils::AddNormalizeAngle(bullets->unk_134.z, ZUN_PI);
         }
         bullets->sprite.pos.z = 0.4f;
-        g_AnmManager->Draw2(&bullets->sprite);
+        //g_AnmManager->Draw2(&bullets->sprite);
     }
 }
 
@@ -1206,6 +1260,8 @@ i32 Player::CheckGraze(ZunVec3 *center, ZunVec3 *size)
     ZunVec3 bulletTopLeft;
     i32 i;
 
+    ZunRect rect;
+
     bulletTopLeft.x = center->x - size->x / 2.0f - 20.0f;
     bulletTopLeft.y = center->y - size->y / 2.0f - 20.0f;
     bulletBottomRight.x = center->x + size->x / 2.0f + 20.0f;
@@ -1270,6 +1326,7 @@ i32 Player::CalcKillBoxCollision(ZunVec3 *bulletCenter, ZunVec3 *bulletSize)
         bombProjectileTop = curBombProjectile->posY - curBombProjectile->sizeY / 2.0f;
         bombProjectileRight = curBombProjectile->posX + curBombProjectile->sizeX / 2.0f;
         bombProjectileBottom = curBombProjectile->posY + curBombProjectile->sizeY / 2.0f;
+
         if (!(bombProjectileLeft > bulletRight || bombProjectileRight < bulletLeft ||
               bombProjectileTop > bulletBottom || bombProjectileBottom < bulletTop))
         {
@@ -1298,6 +1355,10 @@ i32 Player::CalcLaserHitbox(ZunVec3 *laserCenter, ZunVec3 *laserSize, ZunVec3 *r
     ZunVec3 laserBottomRight;
     ZunVec3 playerRelativeTopLeft;
     ZunVec3 playerRelativeBottomRight;
+    ZunVec3 tl;
+    ZunVec3 bl;
+    ZunVec3 tr;
+    ZunVec3 br;
 
     laserTopLeft = this->positionCenter - *rotation;
     utils::Rotate(&laserBottomRight, &laserTopLeft, angle);
@@ -1305,6 +1366,8 @@ i32 Player::CalcLaserHitbox(ZunVec3 *laserCenter, ZunVec3 *laserSize, ZunVec3 *r
     laserTopLeft = laserBottomRight + *rotation;
     playerRelativeTopLeft = laserTopLeft - this->hitboxSize;
     playerRelativeBottomRight = laserTopLeft + this->hitboxSize;
+
+    //ScreenEffect::DrawSquare(&rect, COLOR_DEEPBLUE);
 
     laserTopLeft = *laserCenter - *laserSize / 2.0f;
     laserBottomRight = *laserCenter + *laserSize / 2.0f;

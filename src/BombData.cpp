@@ -199,22 +199,22 @@ void BombData::BombReimuADraw(Player *player)
 
         bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
-        g_AnmManager->DrawNoRotation(bombSprite);
+        //g_AnmManager->DrawNoRotation(bombSprite);
         bombSprite++;
 
         bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
-        g_AnmManager->DrawNoRotation(bombSprite);
+        //g_AnmManager->DrawNoRotation(bombSprite);
         bombSprite++;
 
         bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
-        g_AnmManager->DrawNoRotation(bombSprite);
+        //g_AnmManager->DrawNoRotation(bombSprite);
         bombSprite++;
 
         bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
-        g_AnmManager->DrawNoRotation(bombSprite);
+        //g_AnmManager->DrawNoRotation(bombSprite);
         bombSprite++;
     }
     return;
@@ -341,7 +341,7 @@ void BombData::BombReimuBDraw(Player *player)
         bombSprite->pos.x += g_GameManager.arcadeRegionTopLeftPos.x;
         bombSprite->pos.y += g_GameManager.arcadeRegionTopLeftPos.y;
         bombSprite->pos.z = 0.0f;
-        g_AnmManager->Draw(bombSprite);
+       //g_AnmManager->Draw(bombSprite);
     }
 }
 
@@ -428,7 +428,7 @@ void BombData::BombMarisaADraw(Player *player)
         bombSprite->pos.z = 0.0f;
         bombSprite->scaleX = 3.2f;
         bombSprite->scaleY = 3.2f;
-        g_AnmManager->Draw(bombSprite);
+        //g_AnmManager->Draw(bombSprite);
 
         bombSprite->pos -= player->bombInfo.bombRegionVelocities[idx] * 6.0f;
         bombSprite->pos.x += -32.0f;
@@ -436,7 +436,7 @@ void BombData::BombMarisaADraw(Player *player)
         bombSprite->pos.z = 0.0f;
         bombSprite->scaleX = 2.2f;
         bombSprite->scaleY = 2.2f;
-        g_AnmManager->Draw(bombSprite);
+       // g_AnmManager->Draw(bombSprite);
 
         bombSprite->pos -= player->bombInfo.bombRegionVelocities[idx] * 2.0f;
         bombSprite->pos.x += 64.0f;
@@ -449,7 +449,7 @@ void BombData::BombMarisaADraw(Player *player)
         bombSprite->pos.z = 0.0f;
         bombSprite->scaleX = 1.0f;
         bombSprite->scaleY = 1.0f;
-        g_AnmManager->Draw(bombSprite);
+       // g_AnmManager->Draw(bombSprite);
         bombSprite++;
     }
 }
@@ -537,7 +537,7 @@ void BombData::BombMarisaBDraw(Player *player)
         bombSprite->pos.x += g_GameManager.arcadeRegionTopLeftPos.x;
         bombSprite->pos.y += g_GameManager.arcadeRegionTopLeftPos.y;
         bombSprite->pos.z = 0.0f;
-        g_AnmManager->Draw(bombSprite);
+        //g_AnmManager->Draw(bombSprite);
         bombSprite++;
     }
 }

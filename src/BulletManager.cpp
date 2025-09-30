@@ -12,8 +12,10 @@
 #include "Player.hpp"
 #include "Rng.hpp"
 #include "ZunColor.hpp"
+#include "ScreenEffect.hpp"
 #include "ZunMath.hpp"
 #include "utils.hpp"
+#include <stdio.h>
 
 namespace th06
 {
@@ -69,6 +71,98 @@ DIFFABLE_STATIC_ARRAY_ASSIGN(BulletTypeInfo, 10, g_BulletTypeInfos) = {
     {ASB4(BUBBLE), ASB4(SPAWN_BUBBLE_SLOW), ASB4(SPAWN_BUBBLE_SLOW), ASB4(SPAWN_BUBBLE_SLOW),
      ASB4(SPAWN_BUBBLE_NORMAL)},
 };
+
+ZunColor bulletHitboxColors16[] = {
+    0xff808080,
+    0xff800000,
+    0xffff0000,
+    0xff800080,
+    0xffff00ff,
+    0xff000080,
+    0xff0000ff,
+    0xff008080,
+    0xff00ffff,
+    0xff008000,
+    0xff00ff00,
+    0xff80ff00,
+    0xffa0a000,
+    0xffffff00,
+    0xffffa000,
+    0xffd0d0d0,
+};
+
+ZunColor bulletHitboxColors4[] = {
+    0xffff0000,
+    0xff0000ff,
+    0xff00ff00,
+    0xffffff00,
+};
+
+ZunColor bulletHitboxColors8[] = {
+    0xff808080,
+    0xffff0000,
+    0xffff00ff,
+    0xff0000ff,
+    0xff00ffff,
+    0xff00ff00,
+    0xffffff00,
+    0xffd0d0d0,
+};
+
+ZunColor GetBulletHitboxColor(Bullet *bullet)
+{
+    if (bullet->sprites.bulletHeight < 12)
+    {
+        return bulletHitboxColors16[bullet->spriteOffset];
+    }
+    else if (bullet->sprites.bulletHeight < 24)
+    {
+        return bulletHitboxColors16[bullet->spriteOffset];
+    }
+    else if (bullet->sprites.bulletHeight < 56)
+    {
+        return bulletHitboxColors8[bullet->spriteOffset];
+    }
+    else
+    {
+        return bulletHitboxColors4[bullet->spriteOffset];
+    }
+}
+
+ZunColor GetLaserHitboxColor(Laser *laser)
+{
+    ZunColor color;
+
+    if (laser->vm0.sprite->heightPx < 16)
+    {
+        color = bulletHitboxColors16[laser->color2];
+    }
+    else if (laser->vm0.sprite->heightPx < 32)
+    {
+        color = bulletHitboxColors16[laser->color2];
+    }
+    else if (laser->vm0.sprite->heightPx < 64)
+    {
+        color = bulletHitboxColors8[laser->color2];
+    }
+    else
+    {
+        color = bulletHitboxColors4[laser->color2];
+    }
+
+    u8 red   = color >> 16;
+    u8 green = color >> 8;
+    u8 blue  = color;
+
+    red = red + 0x20 > 0xff ? 0xff : red + 0x20;
+    green = green + 0x20 > 0xff ? 0xff : green + 0x20;
+    blue = blue + 0x20 > 0xff ? 0xff : blue + 0x20;
+
+    return 0xff  << 24 |
+           red   << 16 |
+           green <<  8 |
+           blue; 
+}
 
 void BulletManager::InitializeToZero()
 {
@@ -183,6 +277,7 @@ u32 BulletManager::SpawnSingleBullet(EnemyBulletShooter *bulletProps, i32 bullet
     bullet->sprites.grazeSize = this->bulletTypeTemplates[bulletProps->sprite].grazeSize;
     bullet->sprites.unk_55c = this->bulletTypeTemplates[bulletProps->sprite].unk_55c;
     bullet->sprites.bulletHeight = this->bulletTypeTemplates[bulletProps->sprite].bulletHeight;
+    bullet->color = bulletProps->spriteOffset;
 
     if (bullet->exFlags & 2)
     {
@@ -577,6 +672,7 @@ Laser *BulletManager::SpawnLaserPattern(EnemyLaserShooter *bulletProps)
         laser->vm1.flags.blendMode = AnmVmBlendMode_One;
         laser->pos = bulletProps->position;
         laser->color = bulletProps->spriteOffset;
+        laser->color2 = bulletProps->spriteOffset;
         laser->inUse = true;
         laser->angle = bulletProps->angle;
 
@@ -644,6 +740,100 @@ ZunResult BulletManager::RegisterChain(char *bulletAnmPath)
     g_BulletManagerDrawChain.arg = mgr;
     g_Chain.AddToDrawChain(&g_BulletManagerDrawChain, TH_CHAIN_PRIO_DRAW_BULLETMANAGER);
     return ZUN_SUCCESS;
+}
+
+void DrawLaser(Laser *curLaser, ZunVec3 &laserSize)
+{
+    ZunVec3 tl;
+    ZunVec3 tr;
+    ZunVec3 bl;
+    ZunVec3 br;
+    ZunVec3 laserCenter2;
+    ZunVec3 vec2;
+    ZunVec3 vec3;
+    ZunVec3 laserCenter3;
+    float angle3;
+
+    laserCenter2.x = (curLaser->endOffset - curLaser->startOffset) / 2.0f + curLaser->startOffset;
+    laserCenter2.y = 0;
+
+    angle3 = -curLaser->angle;
+
+    utils::Rotate(&laserCenter3, &laserCenter2, angle3);
+
+    ZunVec3 topLeft;
+    topLeft.x = 32.0f;
+    topLeft.y = 16.0f;
+
+    vec2 = -laserSize / 2.0f;
+    vec3 =  laserSize / 2.0f;
+
+    utils::Rotate(&tl, &vec2, angle3);
+    utils::Rotate(&br, &vec3, angle3);
+
+    vec2.x *= -1;
+    vec3.x *= -1;
+
+    utils::Rotate(&tr, &vec2, angle3);
+    utils::Rotate(&bl, &vec3, angle3);
+
+    tl += laserCenter3 + curLaser->pos + topLeft;
+    bl += laserCenter3 + curLaser->pos + topLeft;
+    tr += laserCenter3 + curLaser->pos + topLeft;
+    br += laserCenter3 + curLaser->pos + topLeft;
+
+    ScreenEffect::DrawQuadrilateral((ZunVec2 *)&tl, (ZunVec2 *)&tr, (ZunVec2 *)&bl, (ZunVec2 *)&br, GetLaserHitboxColor(curLaser));
+}
+
+void DrawLaserGrazebox(Laser *curLaser, ZunVec3 &laserSize)
+{
+    ZunVec3 tl;
+    ZunVec3 tr;
+    ZunVec3 bl;
+    ZunVec3 br;
+    ZunVec3 laserCenter2;
+    ZunVec3 vec2;
+    ZunVec3 vec3;
+    ZunVec3 laserCenter3;
+    float angle3;
+
+    ZunVec3 topLeft;
+    topLeft.x = 32.0f;
+    topLeft.y = 16.0f;
+
+    laserCenter2.x = (curLaser->endOffset - curLaser->startOffset) / 2.0f + curLaser->startOffset;
+    laserCenter2.y = 0;
+
+    angle3 = -curLaser->angle;
+
+    vec2 = -laserSize / 2.0f;
+    vec3 =  laserSize / 2.0f;
+
+    vec2.x -= 48.0f;
+    vec2.y -= 48.0f;
+
+    vec3.x += 48.0f;
+    vec3.y += 48.0f;
+
+    utils::Rotate(&tl, &vec2, angle3);
+    utils::Rotate(&br, &vec3, angle3);
+
+    vec2.x *= -1;
+    vec3.x *= -1;
+
+    utils::Rotate(&tr, &vec2, angle3);
+    utils::Rotate(&bl, &vec3, angle3);
+
+    tl += laserCenter3 + curLaser->pos + topLeft;
+    bl += laserCenter3 + curLaser->pos + topLeft;
+    tr += laserCenter3 + curLaser->pos + topLeft;
+    br += laserCenter3 + curLaser->pos + topLeft;
+
+    ZunColor color = GetLaserHitboxColor(curLaser);
+
+    color = (color & 0xffffff) | 0x25000000;
+
+    ScreenEffect::DrawQuadrilateral((ZunVec2 *)&tl, (ZunVec2 *)&tr, (ZunVec2 *)&bl, (ZunVec2 *)&br, color);
 }
 
 ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
@@ -1016,6 +1206,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             {
                 g_Player.CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
                                          curLaser->timer.AsFrames() % 12 == 0);
+                DrawLaser(curLaser, laserSize);
             }
 
             if ((ZunBool)(curLaser->timer.current < curLaser->startTime))
@@ -1028,6 +1219,11 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
         case 1:
             g_Player.CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
                                      curLaser->timer.AsFrames() % 12 == 0);
+            DrawLaser(curLaser, laserSize);
+            //if (curLaser->timer.AsFrames() % 12 == 0)
+            //{
+                DrawLaserGrazebox(curLaser, laserSize);
+           // }
 
             if ((ZunBool)(curLaser->timer.current < curLaser->duration))
             {
@@ -1069,6 +1265,11 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             {
                 g_Player.CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
                                          curLaser->timer.AsFrames() % 12 == 0);
+                DrawLaser(curLaser, laserSize);
+                //if (curLaser->timer.AsFrames() % 12 == 0)
+               // {
+                    DrawLaserGrazebox(curLaser, laserSize);
+                //}
             }
 
             if ((ZunBool)(curLaser->timer.current < curLaser->endTime))
@@ -1117,7 +1318,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
         curLaser->vm0.pos.y = sine * laserOffset + curLaser->pos.y;
         curLaser->vm0.pos.z = 0.0f;
         curLaser->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, curLaser->color);
-        g_AnmManager->Draw3(&curLaser->vm0);
+        //g_AnmManager->Draw3(&curLaser->vm0);
 
         if (curLaser->startOffset < 16.0f || curLaser->speed == 0.0f)
         {
@@ -1136,7 +1337,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
                 curLaser->vm1.scaleY = curLaser->vm1.scaleX;
             }
 
-            g_AnmManager->Draw3(&curLaser->vm1);
+            //g_AnmManager->Draw3(&curLaser->vm1);
         }
     }
 
@@ -1292,12 +1493,24 @@ void BulletManager::DrawBullet(Bullet *bullet)
     anmVm->pos.z = 0.0;
     anmVm->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, anmVm->color);
 
+    if (bullet->state != 1)
+    {
+        return;
+    }
+
     if (anmVm->autoRotate != 0)
     {
         anmVm->rotation.z = (ZUN_PI / 2.0f) - bullet->angle;
     }
 
-    g_AnmManager->Draw2(anmVm);
+    ZunRect rect;
+    rect.left = g_GameManager.arcadeRegionTopLeftPos.x + bullet->pos.x - bullet->sprites.grazeSize.x / 2.0f;
+    rect.top = g_GameManager.arcadeRegionTopLeftPos.y + bullet->pos.y - bullet->sprites.grazeSize.y / 2.0f;
+    rect.right = g_GameManager.arcadeRegionTopLeftPos.x + bullet->pos.x + bullet->sprites.grazeSize.x / 2.0f;
+    rect.bottom = g_GameManager.arcadeRegionTopLeftPos.y + bullet->pos.y + bullet->sprites.grazeSize.y / 2.0f;
+    
+    ScreenEffect::DrawSquare(&rect, GetBulletHitboxColor(bullet));
+    //g_AnmManager->Draw2(anmVm);
 }
 
 void BulletManager::DrawBulletNoHwVertex(Bullet *bullet)
@@ -1328,12 +1541,23 @@ void BulletManager::DrawBulletNoHwVertex(Bullet *bullet)
     anmVm->pos.z = 0.0;
     anmVm->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, anmVm->color);
 
+    if (bullet->state != 1)
+    {
+        return;
+    }
+
     if (anmVm->autoRotate != 0)
     {
         anmVm->rotation.z = (ZUN_PI / 2.0f) - bullet->angle;
     }
 
-    g_AnmManager->Draw(anmVm);
+    ZunRect rect;
+    rect.left = g_GameManager.arcadeRegionTopLeftPos.x + bullet->pos.x - bullet->sprites.grazeSize.x / 2.0f;
+    rect.top = g_GameManager.arcadeRegionTopLeftPos.y + bullet->pos.y - bullet->sprites.grazeSize.y / 2.0f;
+    rect.right = g_GameManager.arcadeRegionTopLeftPos.x + bullet->pos.x + bullet->sprites.grazeSize.x / 2.0f;
+    rect.bottom = g_GameManager.arcadeRegionTopLeftPos.y + bullet->pos.y + bullet->sprites.grazeSize.y / 2.0f;
+    ScreenEffect::DrawSquare(&rect, GetBulletHitboxColor(bullet));
+    //g_AnmManager->Draw(anmVm);
 }
 
 ZunResult BulletManager::AddedCallback(BulletManager *mgr)

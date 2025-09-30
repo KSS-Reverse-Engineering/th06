@@ -140,6 +140,81 @@ void ScreenEffect::DrawSquare(ZunRect *rect, ZunColor rectColor)
     //    g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 }
 
+void ScreenEffect::DrawQuadrilateral(ZunVec2 *tl, ZunVec2 *tr, ZunVec2 *bl, ZunVec2 *br, ZunColor rectColor)
+{
+    VertexDiffuseXyzrhw vertices[4];
+
+    if (g_AnmManager->currentTextureHandle == 0)
+    {
+        g_AnmManager->SetCurrentTexture(g_AnmManager->dummyTextureHandle);
+    }
+
+    vertices[0].position = ZunVec4(tl->x, tl->y, 0.0f, 1.0f);
+    vertices[1].position = ZunVec4(tr->x, tr->y, 0.0f, 1.0f);
+    vertices[2].position = ZunVec4(bl->x, bl->y, 0.0f, 1.0f);
+    vertices[3].position = ZunVec4(br->x, br->y, 0.0f, 1.0f);
+
+    vertices[0].diffuse = vertices[1].diffuse = vertices[2].diffuse = vertices[3].diffuse = ColorData(rectColor);
+
+    inverseViewportMatrix();
+
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glVertexPointer(4, GL_FLOAT, sizeof(*vertices), &vertices[0].position);
+    glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(*vertices), &vertices[0].diffuse);
+
+    if (((g_Supervisor.cfg.opts >> GCOS_NO_COLOR_COMP) & 0x01) == 0)
+    {
+        glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+        glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+//        g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
+//        g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+    }
+
+    glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_ALPHA, GL_PRIMARY_COLOR);
+    glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_PRIMARY_COLOR);
+//    g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+//    g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_DIFFUSE);
+
+    if (((g_Supervisor.cfg.opts >> GCOS_TURN_OFF_DEPTH_TEST) & 0x01) == 0)
+    {
+        glDepthFunc(GL_ALWAYS);
+        glDepthMask(GL_FALSE);
+    }
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glMatrixMode(GL_TEXTURE);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+
+    g_AnmManager->SetCurrentVertexShader(0xff);
+    g_AnmManager->SetCurrentSprite(NULL);
+    g_AnmManager->SetCurrentTexture(0);
+    g_AnmManager->SetCurrentColorOp(0xff);
+    g_AnmManager->SetCurrentBlendMode(0xff);
+    g_AnmManager->SetCurrentZWriteDisable(0xff);
+
+    if (((g_Supervisor.cfg.opts >> GCOS_NO_COLOR_COMP) & 0x01) == 0)
+    {
+        glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
+        glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
+//        g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+//        g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+    }
+
+    glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_ALPHA, GL_TEXTURE);
+    glTexEnvi(GL_TEXTURE_ENV, GL_SRC0_RGB, GL_TEXTURE);
+    glDepthFunc(GL_LEQUAL);
+
+//    g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+//    g_Supervisor.d3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+}
+
 ChainCallbackResult ScreenEffect::CalcFadeOut(ScreenEffect *effect)
 {
     if (effect->effectLength != 0)

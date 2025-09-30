@@ -45,6 +45,8 @@ struct ScreenEffect
     static ChainCallbackResult CalcFadeOut(ScreenEffect *effect);
 
     static void DrawSquare(ZunRect *rect, ZunColor rectColor);
+    static void DrawQuadrilateral(ZunVec2 *tl, ZunVec2 *tr, ZunVec2 *bl, ZunVec2 *br, ZunColor rectColor);
+
     static void Clear(ZunColor color);
     static void SetViewport(ZunColor color);
 

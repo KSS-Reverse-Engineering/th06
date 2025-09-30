@@ -62,6 +62,7 @@ struct Bullet
     u16 unk_5c0;
     u8 unk_5c2;
     u8 isGrazed;
+    u8 color;
 };
 ZUN_ASSERT_SIZE(Bullet, 0x5c4);
 
@@ -86,6 +87,7 @@ struct Laser
     u16 flags;
     i16 color;
     u8 state;
+    i16 color2;
 };
 ZUN_ASSERT_SIZE(Laser, 0x270);
 

@@ -10,6 +10,7 @@
 #include "Rng.hpp"
 #include "diffbuild.hpp"
 #include "utils.hpp"
+#include "ScreenEffect.hpp"
 
 namespace th06
 {
@@ -584,6 +585,14 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             {
                 // There's something weird going on here, stack-wise.
                 enemyHitbox = curEnemy->HitboxDimensions(1.5f);
+                ZunRect rect;
+                rect.left = g_GameManager.arcadeRegionTopLeftPos.x + curEnemy->position.x - enemyHitbox.x / 2.0f;
+                rect.top = g_GameManager.arcadeRegionTopLeftPos.y + curEnemy->position.y - enemyHitbox.y / 2.0f;
+                rect.right = g_GameManager.arcadeRegionTopLeftPos.x + curEnemy->position.x + enemyHitbox.x / 2.0f;
+                rect.bottom = g_GameManager.arcadeRegionTopLeftPos.y + curEnemy->position.y + enemyHitbox.y / 2.0f;
+                
+                ScreenEffect::DrawSquare(&rect, COLOR_WHITE);
+                
                 if (g_Player.CalcKillBoxCollision(&curEnemy->position, &enemyHitbox) == 1 && curEnemy->flags.unk6 &&
                     !curEnemy->flags.isBoss)
                 {
@@ -791,7 +800,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
                 }
                 curEnemyVm->pos = curEnemy->position + curEnemyVm->posOffset;
                 curEnemyVm->pos.z = 0.495f;
-                g_AnmManager->Draw2(curEnemyVm);
+                //g_AnmManager->Draw2(curEnemyVm);
             }
         }
         if (curEnemy->flags.unk13 != 0)
@@ -800,7 +809,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
         }
         curEnemy->primaryVm.pos = curEnemy->position + curEnemy->primaryVm.posOffset;
         curEnemy->primaryVm.pos.z = 0.494f;
-        g_AnmManager->Draw2(&curEnemy->primaryVm);
+        //g_AnmManager->Draw2(&curEnemy->primaryVm);
         for (curEnemyVmIdx = 4; curEnemyVmIdx < 8; curEnemyVmIdx++, curEnemyVm++)
         {
             if (0 <= curEnemyVm->anmFileIndex)
@@ -811,7 +820,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
                 }
                 curEnemyVm->pos = curEnemy->position + curEnemyVm->posOffset;
                 curEnemyVm->pos.z = 0.495f;
-                g_AnmManager->Draw2(curEnemyVm);
+                //g_AnmManager->Draw2(curEnemyVm);
             }
         }
     }

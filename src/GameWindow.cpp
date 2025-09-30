@@ -8,6 +8,8 @@
 #include "ZunMath.hpp"
 #include "diffbuild.hpp"
 #include "i18n.hpp"
+#include "utils.hpp"
+#include "Controller.hpp"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h>
@@ -34,7 +36,7 @@ RenderResult GameWindow::Render()
         return RENDER_RESULT_KEEP_RUNNING;
     }
 
-    if (this->curFrame == 0)
+    if (this->curFrame == 0 || IS_PRESSED(TH_BUTTON_Q))
     {
     RUN_CHAINS:
         if (g_Supervisor.cfg.frameskipConfig <= this->curFrame)
